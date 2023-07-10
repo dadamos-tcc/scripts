@@ -1,0 +1,91 @@
+.data
+espaco: .asciz  " "
+lista:  .word   0
+
+# s0: limite
+# s1: lista
+# s2: i
+# s3: i * i
+# s4: j
+# s5: 1
+.text
+main:
+    li   a7, 5                   # a7 é o serviço
+    ecall                        # lê um inteiro em a0
+    mv   s0, a0                  # armazena o inteiro em s0
+
+# inicia lista
+    li   s5, 1
+    la   s1, lista               # posição inicial da lista
+    li   s2, 2                   # posição inicial i = 2
+inicia_lista:
+    blt  s0, s2, inicia_crivo    # limite < posição corrente (i <= limite)
+    sw   s5, 8(s1)               # lista[i] = 1; 8() é para começar em lista[2] 
+    addi s2, s2, 1               # i++
+    addi s1, s1, 4               # próxima posição da lista, cada word tem tamanho 4
+    j    inicia_lista
+
+# crivo de Eratóstenes
+inicia_crivo:
+    la   s1, lista               # posição inicial da lista
+    li   s2, 2                   # posição inicial i = 2
+crivo:
+    mul  s3, s2, s2              # i * i
+    blt  s0, s3, inicia_imprime  # limite < quadrado da posição corrente (i * i <= limite)
+    mv   s4, s3                  # j = i * i
+    slli t0, s2, 2               # posição corrente vezes o tamanho da word (i * 4)
+    add  s1, s1, t0              # próxima posição da lista (primeira posição será 8, lista[2])
+    lw   t0, 0(s1)               # lista[i]
+    beq  t0, s5, marca_nao_primo # if (lista[i])
+loop_crivo:
+    la   s1, lista               # vai para o início da lista
+    addi s2, s2, 1               # i++
+    j    crivo
+marca_nao_primo:
+    blt  s0, s4, loop_crivo      # limite < posição corrente (j <= limite)
+    la   s1, lista               # volta para o começo da lista
+    slli t1, s4, 2               # posição corrente vezes o tamanho da word (j * 4)
+    add  s1, s1, t1              # próxima posição da lista
+    sw   zero, 0(s1)             # lista[j] = 0
+    add  s4, s4, s2              # j += i
+    j    marca_nao_primo
+
+# imprime primos
+inicia_imprime:
+    la   s1, lista               # posição inicial da lista
+    li   s2, 2                   # posição inicial i = 2
+imprime_lista:
+    blt  s0, s2, encerra         # limite < posição corrente (i <= limite)
+    lw   t0, 8(s1)               # 8() é para começar em lista[2] 
+    beq  t0, s5, imprimir        # if (lista[i])
+    j    loop_imprime
+imprimir:
+    mv   a0, s2                  # copia a posição corrente para a0
+    li   a7, 1                   # a7 é o serviço, 1 imprime inteiros
+    ecall                        # imprime a0
+    la   a0, espaco              # a0 é a entrada do ecall
+    li   a7, 4                   # a7 é o serviço, 4 imprime strings
+    ecall                        # imprime a0
+loop_imprime:
+    addi s2, s2, 1               # i++
+    addi s1, s1, 4               # próxima posição da lista, cada word tem tamanho 4
+    j    imprime_lista
+
+# return 0;
+encerra:
+    mv   a0, zero                # copia 0 para a0, será o retorno do encerramento do programa
+    li   a7, 93                  # a7 é o serviço, 93 encerra o programa
+    ecall                        # encerra o programa
+
+
+# otimizar a aplicacao
+# utilizar
+# 
+
+# defesa entre 3 e 14
+
+# bin/time mudar o format para micro segundo
+
+# add scripts no apêndice
+
+# apendice eu que criei, anexo não
