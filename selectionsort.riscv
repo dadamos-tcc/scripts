@@ -1,0 +1,99 @@
+.data
+nova_linha: .asciz  "\n"
+vetor:  .word   0
+
+# s0: tamanho
+# s1: vetor
+# s2: i
+# s4: j
+# s5: min
+# s6: temp/vetor[i]
+# s7: vetor[j]
+# s8: vetor[min]
+.text
+main:
+    li   a7, 5                   # a7 é o serviço
+    ecall                        # lê um inteiro em a0
+    mv   s0, a0                  # armazena o inteiro em s0
+    la   s1, vetor               # posição inicial da vetor
+    mv   s2, zero                # posição inicial i = 0
+inicia_vetor:
+    beq  s0, s2, inicia_selection_sort # tamanho = posição corrente (i < tamanho)
+    li   a7, 5                   # a7 é o serviço
+    ecall                        # lê um inteiro em a0
+    sw   a0, 0(s1)               # vetor[i] = entrada;
+    addi s2, s2, 1               # i++
+    addi s1, s1, 4               # próxima posição da vetor, cada word tem tamanho 4
+    j    inicia_vetor
+
+# ordena vetor (selection sort)
+inicia_selection_sort:
+    la   s1, vetor               # posição inicial da vetor
+    mv   s2, zero                # posição inicial i = 0
+selection_sort:
+    li   t0, 1
+    sub  t1, s0, t0              # tamanho - 1
+    beq  t1, s2, inicia_imprime  # tamanho = posição corrente (i < tamanho - 1)
+    mv   s5, s2                  # min = i
+    slli t0, s2, 2               # posição corrente vezes o tamanho da word (i * 4)
+    add  s1, s1, t0              # posição da vetor; primeira posição será 0 ( vetor[0]), segunda será 4 (vetor[0]), ...
+    lw   s6, 0(s1)               # temp = vetor[i]
+
+inicia_loop_j:
+    addi s4, s2, 1               # j = i + 1
+loop_j:
+    beq  s0, s4, troca           # tamanho = posição corrente (j < tamanho)
+    la   s1, vetor               # posição inicial da vetor
+    slli t0, s4, 2               # posição corrente vezes o tamanho da word (j * 4)
+    add  s1, s1, t0              # posição da vetor
+    lw   s7, 0(s1)               # s7 = vetor[j]
+
+    la   s1, vetor               # posição inicial da vetor
+    slli t0, s5, 2               # posição corrente vezes o tamanho da word (min * 4)
+    add  s1, s1, t0              # posição da vetor
+    lw   s8, 0(s1)               # t3 = vetor[min]
+
+    blt  s7, s8, min_j
+    j segue_loop_j
+min_j:
+    mv   s5, s4                  # min = j
+segue_loop_j:
+    addi s4, s4, 1               # j++
+    j loop_j
+troca:
+    la   s1, vetor               # volta para o começo da vetor
+    slli t0, s5, 2               # posição corrente vezes o tamanho da word (min * 4)
+    add  s1, s1, t0              # posição da vetor
+    lw   t1, 0(s1)               # t1 = vetor[min]
+    sw   s6, 0(s1)               # vetor[min] = temp;   
+    la   s1, vetor               # volta para o começo da vetor
+    slli t0, s2, 2               # posição corrente vezes o tamanho da word (i * 4)
+    add  s1, s1, t0              # posição da vetor
+    sw   t1, 0(s1)               # vetor[i] = vetor[min];
+loop_selection_sort:
+    la   s1, vetor               # vai para o início da vetor
+    addi s2, s2, 1               # i++
+    j    selection_sort
+
+# imprime vetor
+inicia_imprime:
+    la   s1, vetor               # posição inicial da vetor
+    mv   s2, zero                # posição inicial i = 0
+imprime_vetor:
+    beq  s0, s2, encerra         # tamanho = posição corrente (i < tamanho)
+    lw   a0, 0(s1)               # copia a posição corrente para a0
+    li   a7, 1                   # a7 é o serviço, 1 imprime inteiros
+    ecall                        # imprime a0
+    la   a0, nova_linha          # a0 é a entrada do ecall
+    li   a7, 4                   # a7 é o serviço, 4 imprime strings
+    ecall                        # imprime a0
+loop_imprime:
+    addi s2, s2, 1               # i++
+    addi s1, s1, 4               # próxima posição da vetor, cada word tem tamanho 4
+    j    imprime_vetor
+
+# return 0;
+encerra:
+    mv   a0, zero                # copia 0 para a0, será o retorno do encerramento do programa
+    li   a7, 93                  # a7 é o serviço, 93 encerra o programa
+    ecall                        # encerra o programa
